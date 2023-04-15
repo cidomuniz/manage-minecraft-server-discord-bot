@@ -15,50 +15,61 @@ ec2 = boto3.client('ec2')
 instance_id = os.getenv('INSTANCE_ID')
 
 
-async def execute_command(public_ip, command):
+async def backup_instance(public_ip, ctx):
     with paramiko.SSHClient() as ssh:
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         ssh.connect(hostname=public_ip, username='ec2-user',
                     key_filename=os.getenv('KEY_FILENAME'))
-        return ssh.exec_command(command)
+        stdin, stdout, stderr = ssh.exec_command(
+            'bash /home/ec2-user/backup-server.sh')
+        output = stdout.readlines()
+        exit_status = stdout.channel.recv_exit_status()
 
-
-async def backup_instance(public_ip, ctx):
-    stdin, stdout, stderr = await execute_command(public_ip, 'bash /home/ec2-user/backup-server.sh')
-    output = stdout.readlines()
-    exit_status = stdout.channel.recv_exit_status()
-
-    if exit_status == 0:
-        emoji = discord.PartialEmoji(name='✅')
-        await ctx.send(f'{emoji}Backup do servidor executado com `sucesso`!')
-    else:
-        print(output)
-        emoji = discord.PartialEmoji(name='❌')
-        await ctx.send(f'{emoji}Backup do servidor executado com `falha`!')
+        if exit_status == 0:
+            emoji = discord.PartialEmoji(name='✅')
+            await ctx.send(f'{emoji}Backup do servidor executado com `sucesso`!')
+        else:
+            print(output)
+            emoji = discord.PartialEmoji(name='❌')
+            await ctx.send(f'{emoji}Backup do servidor executado com `falha`!')
 
 
 async def stop_minecraft_service(public_ip, ctx):
-    stdin, stdout, stderr = await execute_command(public_ip, 'sudo systemctl stop minecraft.service')
-    output = stdout.readlines()
-    exit_status = stdout.channel.recv_exit_status()
+    with paramiko.SSHClient() as ssh:
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        ssh.connect(hostname=public_ip, username='ec2-user',
+                    key_filename=os.getenv('KEY_FILENAME'))
+        stdin, stdout, stderr = ssh.exec_command(
+            'sudo systemctl stop minecraft.service')
+        output = stdout.readlines()
+        exit_status = stdout.channel.recv_exit_status()
 
-    if exit_status == 0:
-        await ctx.send('Serviço parado com `sucesso`!')
-    else:
-        print(output)
-        await ctx.send('Serviço parado com `falha`!')
+        if exit_status == 0:
+            emoji = discord.PartialEmoji(name='✅')
+            await ctx.send(f'{emoji}Serviço parado com `sucesso`!')
+        else:
+            print(output)
+            emoji = discord.PartialEmoji(name='❌')
+            await ctx.send(f'{emoji}Serviço parado com `falha`!')
 
 
 async def start_minecraft_service(public_ip, ctx):
-    stdin, stdout, stderr = await execute_command(public_ip, 'sudo systemctl start minecraft.service')
-    output = stdout.readlines()
-    exit_status = stdout.channel.recv_exit_status()
+    with paramiko.SSHClient() as ssh:
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        ssh.connect(hostname=public_ip, username='ec2-user',
+                    key_filename=os.getenv('KEY_FILENAME'))
+        stdin, stdout, stderr = ssh.exec_command(
+            'sudo systemctl start minecraft.service')
+        output = stdout.readlines()
+        exit_status = stdout.channel.recv_exit_status()
 
-    if exit_status == 0:
-        await ctx.send('Serviço iniciado com `sucesso`!')
-    else:
-        print(output)
-        await ctx.send('Serviço iniciado com `falha`!')
+        if exit_status == 0:
+            emoji = discord.PartialEmoji(name='✅')
+            await ctx.send(f'{emoji}Serviço iniciado com `sucesso`!')
+        else:
+            print(output)
+            emoji = discord.PartialEmoji(name='❌')
+            await ctx.send(f'{emoji}Serviço iniciado com `falha`!')
 
 
 def get_instance_details(instance_id):
@@ -162,7 +173,6 @@ async def backup(ctx):
             await backup_instance(public_ip, ctx)
     else:
         await ctx.send('Estado atual do servidor é inválido, contate o administrador!')
-
 
 
 bot.run(os.getenv('TOKEN'))
