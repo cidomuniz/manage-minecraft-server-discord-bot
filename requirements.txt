@@ -1,0 +1,7 @@
+discord
+requests
+python-dotenv
+boto3
+boto3-stubs
+minestat
+paramiko
